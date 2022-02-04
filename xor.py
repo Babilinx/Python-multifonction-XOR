@@ -9,18 +9,24 @@ import tqdm
 def help():  # simple help message
     print("""\n
     Simple python XOR encryption/decryption by Babilinx\n\n
-    name.py [fonction] [text you want to use] [file to use] [output filename] [-o] {key}
+    name.py [fonction] [text you want to use] [file to use] {key} [-f] [filename] [-o] [filename]
 
     fonctions:
     -h          Show this help message
-    -setup      Setup all of requirements in the folder where the file is.
-    -e          Encrypt the text you are used in second position with the key what is enter if it's enter,
+    -e          Encrypt the text you are used in second position with the key
+                what is enter if it's enter,
                 else it generate a key and print it
-    -d          Decrypt the text you are used in second position with the key what is enter
-    -eFile      Encrypt a file you are used in second position with the key what is enter if it's enter,
-                else it generate a key and print it (you also can use -o option)
-    -dFile      Decrypt a file you are used in second position with the key's file (ex: C:\...\...\keys\keyname.txt)
-    -o          Write/read the key into a file""")
+    -d          Decrypt the text you are used in second position with the key
+                what is enter
+    -eFile      Encrypt a file you are used in second position with the key
+                what is enter if it's enter,
+                else it generate a key and print it (you also can use -f option)
+    -dFile      Decrypt a file you are used in second position with the key's file
+                (ex: C:\...\...\keys\keyname.txt)
+    -f          Write/read keys on a file.
+    -o          Write outputs in a file.
+
+    See more on README file on GitHub ! """)
 
 
 def key_gen(txt):
@@ -42,6 +48,7 @@ def xor(txt, key):
     return ''.join(output)  # xor {txt} with the key {key}
 
 
+# check if the user have enter an arguments
 try:
     fonc = sys.argv[1]
 except IndexError:
@@ -49,42 +56,104 @@ except IndexError:
     help()
     sys.exit()
 
-
+# help menu
 if fonc == "-h":
     help()
-
-if fonc == "-e" or fonc == "-d":
+# encrypt fonction
+elif fonc == "-e":
+    # check if the user enter an argument
     try:
         txt = sys.argv[2]
     except IndexError:
         print("\nArgumentError: Try '-h' to show help menu")
+        sys.exit()
+        # check if the user enter a key, if not it generate one
     try:
         key = sys.argv[3]
     except IndexError:
-        key_statut = False  # True if the key was enteer as sys.argv[3]
+        # generate the key
         key = key_gen(txt)
+    # print the key and encrypted text
+    print("\nkey = {}".format(key))
+    print("\ntext = {}".format(xor(txt, key)))
+    # check for f fonction
     try:
-        if fonc == "-e":
-            print(f"\nkey = {key}")
-        print(f"\ntext = {xor(txt, key)}")
-    except NameError:
+        if sys.argv[4] == "-f":
+            try:
+                # try to catch filename
+                key_name = sys.argv[5]
+            except IndexError:
+                key_name = input("Enter the key filename: ")
+            # check if keys dirrectory exists
+            if not os.path.isdir("keys"):
+                # if not, it will create it if the user is okey
+                if input("Error: Dirrectory 'keys' don't exists.\nDo you want to create it ? [y|n] ") == "y":
+                    # create it
+                    os.mkdir("keys")
+            # go to dir keys
+            os.chdir("keys")
+            # write the key in the key_file
+            with open(key_name, "a") as f_key_name:
+                f_key_name.write(key)
+    # if not f fonction, just pass
+    except IndexError:
         pass
-    if sys.argv[4] == "-o":
-        key_name = input("Enter the key name: ")
-        if not os.path.isdir("keys"):
-            os.mkdir("keys")
-        os.chdir("keys")
-        with open(key_name, "a") as f_key_name:
-            f_key_name.write(key)
 
-if fonc == "-t":
-    txt = sys.argv[2]
-    key = sys.argv[3]
-    t = xor(txt, key)
-    print(t)
-    print(xor(t, key))
+# decrypt fonction
+elif fonc == "-d":
+    # check if the user enter an argument
+    try:
+        txt = sys.argv[2]
+    except IndexError:
+        print("\nArgumentError: Try '-h' to show help menu")
+        sys.exit()
+    # check if the user enter the key
+    try:
+        key = sys.argv[3]
+    except IndexError:
+        print("\nArgumentError: Try '-h' to show help menu")
+    # check for f fonction
+    try:
+        if sys.argv[4] == "-f":
+            try:
+                # try to catch filename
+                key_name = sys.argv[5]
+            except IndexError:
+                key_name = input("Enter the key's filename: ")
+            # check if keys dirrectory exists
+            if not os.path.isdir("keys"):
+                # if not, it will create it if the user is okey
+                if input("Error: Dirrectory 'keys' don't exists.\nDo you want to create it ? [y|n] ") == "y":
+                    # create it
+                    os.mkdir("keys")
+                    # exiting because the key file can't exists
+                    sys.exit()
+            # go to dir keys
+            os.chdir("keys")
+            # read the key in the key_file
+            with open(key_name, "r") as f_key_name:
+                key = f_key_name.read()
+    # if not f fonction, just print the key and pass
+    except IndexError:
+        print(f"key = {key}")
+        pass
 
-if fonc == "-eFile":
+    # check for -o fonction
+    try:
+        if sys.argv[6] == "-o":
+            try:
+                filename = sys.argv[7]
+                # open the file and write the decrypt text
+                with open(filename, "w") as f:
+                    f.write(xor(txt, key))
+            except IndexError:
+                print("FileNotExist: Try '-h' to show help menu")
+    # in not o fonction, just pass
+    except IndexError:
+        pass
+
+
+elif fonc == "-eFile":
     input_file = sys.argv[2]
     output_file = sys.argv[3]
 
@@ -92,7 +161,7 @@ if fonc == "-eFile":
         print(f"[+] Reading {input_file} ...")
         filesize = os.path.getsize(input_file)
         try:
-            if sys.argv[4] != "-o":
+            if sys.argv[4] != "-f":
                 try:
                     key = sys.argv[4]
                 except IndexError:
@@ -138,7 +207,7 @@ if fonc == "-eFile":
                 i += 1
             print("\n[+] Done")
 
-if fonc == "-dFile":
+elif fonc == "-dFile":
     try:
         input_file = sys.argv[2]
     except IndexError:
@@ -168,8 +237,7 @@ if fonc == "-dFile":
                     print(f"\nArgumentError: Try '-h' to show help menu")
 
             else:
-                print(
-                    f"\nArgumentError: name '{sys.argv[4]}' is not defined\nTry '-h' to show help menu")
+                print(f"\nArgumentError: name '{sys.argv[4]}' is not defined\nTry '-h' to show help menu")
 
         except IndexError:
             key = sys.argv[4]
@@ -189,8 +257,6 @@ if fonc == "-dFile":
             print("\n[+] Done")
             sys.exit()
 
-if fonc == "-setup":
-    os.mkdir("keys")
 
 else:
     print(f"\nArgumentError: name '{fonc}' is not defined\nTry '-h' to show help menu")
